@@ -1,3 +1,5 @@
+import os.path
+
 import cv2
 import numpy as np
 import time
@@ -13,12 +15,12 @@ def kalman_filter(x, y, kalman):
     return predicted[0], predicted[1]
 
 # Захват видео
-video_rgb_path = '../Seq1_camera1.mov'  # Обычное видео
-video_ir_path = '../Seq1_camera1T.mov'   # Инфракрасное видео
+video_rgb_path = os.path.abspath('tests\\step1\\videoset1\\Seq1_camera1.mov')  # Обычное видео
+video_ir_path = os.path.abspath('tests\\step1\\videoset1\\Seq1_camera1T.mov')  # ИК видео
 
 # Открытие видеопотоков
-video_rgb = cv2.VideoCapture(video_rgb_path)
-video_ir = cv2.VideoCapture(video_ir_path)
+video_rgb = cv2.VideoCapture(video_rgb_path, cv2.CAP_FFMPEG)
+video_ir = cv2.VideoCapture(video_ir_path, cv2.CAP_FFMPEG)
 
 # Проверим, что видео было загружено
 if not video_rgb.isOpened() or not video_ir.isOpened():
