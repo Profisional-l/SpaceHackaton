@@ -75,14 +75,15 @@ def main():
     video_processors = []
 
     for i in range(3):
-        path = os.path.abspath('tests\\step1\\videoset' + str(videoset) + f'\\Seq{i+1}_camera{i + 1}.mov')
-        path_t = os.path.abspath('tests\\step1\\videoset' + str(videoset) + f'\\Seq{i+1}_camera{i + 1}T.mov')
+        path = os.path.abspath('tests\\step1\\videoset' + str(videoset) + f'\\Seq{videoset+1}_camera{i + 1}.mov')
+        path_t = os.path.abspath('tests\\step1\\videoset' + str(videoset) + f'\\Seq{videoset+1}_camera{i + 1}T.mov')
         video_processors.append(VideoProcessor(path, camera_info[i], 'rgb'))
         video_processors.append(VideoProcessor(path_t, camera_info[i], 'ir'))
 
     a = video_processors[0].get_all_coords()
 
-    print(a)
+    for i, data in enumerate(a):
+        print(i, data)
 
     # TODO: Обработка видео
     # Это нужно распараллелить

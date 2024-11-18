@@ -83,6 +83,7 @@ class VideoProcessor:
 
             # Возвращаем координаты и диаметр (2 * радиус)
             self.prev_gray_frame = gray_frame.copy()
+            print(f"Координаты объекта: ({predicted_x[0]}, {predicted_y[0]})")
             return (predicted_x[0], predicted_y[0]), 2 * radius
         else:
             if not self.object_hidden:
@@ -116,12 +117,11 @@ class VideoProcessor:
             # Вывод прогресса в консоль
             progress = (frame_count / self.total_frames) * 100
             elapsed_time = frame_count / self.video.get(cv2.CAP_PROP_FPS)
-            cv2.imshow("Object Detection", frame)
             print(f"Кадр: {frame_count}/{self.total_frames} ({progress:.2f}%) - Время: {elapsed_time:.2f}с", end="\r")
 
             # Выход по нажатию ESC
-            if cv2.waitKey(1) & 0xFF == 27:
-                break
+            # if cv2.waitKey(1) & 0xFF == 27:
+            #     break
 
         self.video.release()
         cv2.destroyAllWindows()
