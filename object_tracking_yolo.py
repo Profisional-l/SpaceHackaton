@@ -84,7 +84,7 @@ while True:
     result_frame_resized = cv2.resize(result_frame, (640, 360))  # Новый размер окна
     
     # Отображаем результат
-    # cv2.imshow("Motion Detection", result_frame_resized)
+    cv2.imshow("Motion Detection", result_frame_resized)
     
     # Обновляем предыдущие кадры
     prev_gray_rgb = gray_rgb.copy()
