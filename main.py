@@ -1,5 +1,4 @@
-import os.path
-
+import os
 from camera_data import CameraData
 from video_processing import VideoProcessor
 
@@ -20,18 +19,21 @@ def get_camera_info():
     x1, y1, z1 = float(input("Введите координату X камеры 1: ")), \
                  float(input("Введите координату Y камеры 1: ")), \
                  float(input("Введите координату Z камеры 1: "))
+
     az1 = float(input("Введите угол азимута камеры 1: "))
 
     # Камера 2
     x2, y2, z2 = float(input("Введите координату X камеры 2: ")), \
                  float(input("Введите координату Y камеры 2: ")), \
                  float(input("Введите координату Z камеры 2: "))
+
     az2 = float(input("Введите угол азимута камеры 2: "))
 
     # Камера 3
     x3, y3, z3 = float(input("Введите координату X камеры 3: ")), \
                  float(input("Введите координату Y камеры 3: ")), \
                  float(input("Введите координату Z камеры 3: "))
+
     az3 = float(input("Введите угол азимута камеры 3: "))
 
     return [
