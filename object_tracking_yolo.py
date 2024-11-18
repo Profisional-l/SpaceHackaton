@@ -28,6 +28,9 @@ if not video_rgb.isOpened() or not video_ir.isOpened():
 total_frames_rgb = int(video_rgb.get(cv2.CAP_PROP_FRAME_COUNT))
 total_frames_ir = int(video_ir.get(cv2.CAP_PROP_FRAME_COUNT))
 
+# Частота кадров
+fps_rgb = video_rgb.get(cv2.CAP_PROP_FPS)
+
 # Считываем первый кадр для обоих видео
 ret_rgb, prev_frame_rgb = video_rgb.read()
 ret_ir, prev_frame_ir = video_ir.read()
@@ -41,6 +44,7 @@ prev_gray_ir = cv2.cvtColor(prev_frame_ir, cv2.COLOR_BGR2GRAY)
 
 # Инициализация счётчика кадров
 frame_count = 0
+object_was_visible = False  # Переменная для отслеживания видимости объекта
 
 while True:
     ret_rgb, frame_rgb = video_rgb.read()
@@ -76,7 +80,13 @@ while True:
         # Если есть движущиеся пиксели, выводим их средние координаты
         center_x = int(np.mean(non_zero_points[1]))  # Среднее по оси X
         center_y = int(np.mean(non_zero_points[0]))  # Среднее по оси Y
-        print(f"Координаты движущегося объекта: X={center_x}, Y={center_y}")
+        object_was_visible = True
+        print(f"Координаты объекта: X={center_x}, Y={center_y} (Кадр {frame_count}/{total_frames_rgb} - Время: {frame_count / fps_rgb:.2f} сек)")
+    else:
+        if object_was_visible:
+            print(f"Кадр {frame_count}/{total_frames_rgb} - Время: {frame_count / fps_rgb:.2f} сек")
+            print("Объект скрыт из кадра.")
+            object_was_visible = False
     
     # Уменьшаем размер окна для отображения результата
     result_frame_resized = cv2.resize(result_frame, (640, 360))  # Новый размер окна
