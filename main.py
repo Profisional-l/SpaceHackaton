@@ -14,6 +14,7 @@ def get_camera_info():
     focal_length = input("Введите фокусное расстояние камеры (мм): ")
     matrix_width = input("Введите ширину матрицы камеры (мм): ")
     matrix_height = input("Введите высоту матрицы камеры (мм): ")
+    sphere_diameter = input("Введите диаметр сферы (м): ")
 
     # Камера 1
     x1, y1, z1 = float(input("Введите координату X камеры 1: ")), \
@@ -41,7 +42,8 @@ def get_camera_info():
             x=x1,
             y=y1,
             z=z1,
-            az=az1
+            az=az1,
+            sphere_diameter=sphere_diameter
         ),
         CameraData(
             focal_length=focal_length,
@@ -50,7 +52,8 @@ def get_camera_info():
             x=x2,
             y=y2,
             z=z2,
-            az=az2
+            az=az2,
+            sphere_diameter=sphere_diameter
         ),
         CameraData(
             focal_length=focal_length,
@@ -59,7 +62,8 @@ def get_camera_info():
             x=x3,
             y=y3,
             z=z3,
-            az=az3
+            az=az3,
+            sphere_diameter=sphere_diameter
         )
     ]
 
@@ -71,10 +75,14 @@ def main():
     video_processors = []
 
     for i in range(3):
-        path = os.path.abspath('tests\\step1\\videoset' + str(videoset) + f'\\Seq1_camera{i + 1}.mov')
-        path_t = os.path.abspath('tests\\step1\\videoset' + str(videoset) + f'\\Seq1_camera{i + 1}T.mov')
+        path = os.path.abspath('tests\\step1\\videoset' + str(videoset) + f'\\Seq{i+1}_camera{i + 1}.mov')
+        path_t = os.path.abspath('tests\\step1\\videoset' + str(videoset) + f'\\Seq{i+1}_camera{i + 1}T.mov')
         video_processors.append(VideoProcessor(path, camera_info[i], 'rgb'))
         video_processors.append(VideoProcessor(path_t, camera_info[i], 'ir'))
+
+    a = video_processors[0].get_all_coords()
+
+    print(a)
 
     # TODO: Обработка видео
     # Это нужно распараллелить
