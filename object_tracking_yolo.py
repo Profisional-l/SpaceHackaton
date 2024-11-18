@@ -1,72 +1,101 @@
 import cv2
 import numpy as np
-from ultralytics import YOLO
 
-# Загрузка модели YOLO (используем предобученную YOLOv8)
-model = YOLO('yolov8n.pt')  # Можно выбрать yolov8n.pt, yolov8s.pt и другие
-
-# Параметры для примитивного вычисления глубины
-FOCAL_LENGTH = 800  # Фокусное расстояние (примерное значение)
-KNOWN_WIDTH = 0.5   # Известная ширина объекта (в метрах)
-
-def calculate_3d_coordinates(bbox, depth_map):
-    """
-    Вычисление 3D координат объекта на основе его 2D позиции и глубины.
-    bbox: [x1, y1, x2, y2]
-    depth_map: карта глубины кадра
-    """
-    x1, y1, x2, y2 = map(int, bbox)
-    x_center = (x1 + x2) // 2
-    y_center = (y1 + y2) // 2
+# Функция для вычисления оптического потока и движения
+def compute_motion(prev_gray, gray):
+    # Вычисляем оптический поток
+    flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
     
-    # Пример получения глубины в центре объекта
-    z = depth_map[y_center, x_center]  # Глубина (z-координата)
+    # Вычисляем изменения в каждом пикселе
+    magnitude, angle = cv2.cartToPolar(flow[..., 0], flow[..., 1])
     
-    # Примерные 3D координаты (должны быть уточнены)
-    x = (x_center - depth_map.shape[1] // 2) * z / FOCAL_LENGTH
-    y = (y_center - depth_map.shape[0] // 2) * z / FOCAL_LENGTH
-    return x, y, z
+    return magnitude
 
 # Захват видео
-video = cv2.VideoCapture('test02.mp4')
-  # 0 - вебкамера, или путь к видеофайлу
+video_rgb_path = '../Seq1_camera1.mov'  # Обычное видео
+video_ir_path = '../Seq1_camera1T.mov'   # Инфракрасное видео
+
+# Открытие видеопотоков
+video_rgb = cv2.VideoCapture(video_rgb_path)
+video_ir = cv2.VideoCapture(video_ir_path)
+
+# Проверим, что видео было загружено
+if not video_rgb.isOpened() or not video_ir.isOpened():
+    print("Ошибка при открытии видео")
+    exit()
+
+# Получаем количество кадров в видео для отображения прогресса
+total_frames_rgb = int(video_rgb.get(cv2.CAP_PROP_FRAME_COUNT))
+total_frames_ir = int(video_ir.get(cv2.CAP_PROP_FRAME_COUNT))
+
+# Считываем первый кадр для обоих видео
+ret_rgb, prev_frame_rgb = video_rgb.read()
+ret_ir, prev_frame_ir = video_ir.read()
+if not ret_rgb or not ret_ir:
+    print("Не удалось прочитать кадр")
+    exit()
+
+# Преобразуем кадры в серый цвет для оптического потока
+prev_gray_rgb = cv2.cvtColor(prev_frame_rgb, cv2.COLOR_BGR2GRAY)
+prev_gray_ir = cv2.cvtColor(prev_frame_ir, cv2.COLOR_BGR2GRAY)
+
+# Инициализация счётчика кадров
+frame_count = 0
 
 while True:
-    ret, frame = video.read()
-    if not ret:
-        break
-
-    # Детекция объектов
-    results = model(frame, stream=True)  # Результаты работы YOLO
-    depth_map = np.full(frame.shape[:2], 2.0)  # Простая фейковая карта глубины
+    ret_rgb, frame_rgb = video_rgb.read()
+    ret_ir, frame_ir = video_ir.read()
     
-    for result in results:
-        for box in result.boxes:
-            # Координаты ограничивающего прямоугольника
-            x1, y1, x2, y2 = map(int, box.xyxy[0])
-            confidence = box.conf[0]
-            cls = int(box.cls[0])
-            
-            # Условие фильтрации по порогу уверенности
-            if confidence > 0.5:
-                # Рисуем прямоугольник вокруг объекта
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                
-                # Добавление метки класса и вероятности
-                label = f"{model.names[cls]} {confidence:.2f}"
-                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                
-                # Пример 3D координат
-                x, y, z = calculate_3d_coordinates((x1, y1, x2, y2), depth_map)
-                cv2.putText(frame, f"3D: ({x:.2f}, {y:.2f}, {z:.2f})", (x1, y2 + 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-
-    # Показ видео
-    cv2.imshow('Object Detection', frame)
-
-    # Выход из цикла по нажатию ESC
+    if not ret_rgb or not ret_ir:
+        break
+    
+    frame_count += 1  # Увеличиваем счётчик кадров
+    
+    # Преобразуем кадры в серый для расчета оптического потока
+    gray_rgb = cv2.cvtColor(frame_rgb, cv2.COLOR_BGR2GRAY)
+    gray_ir = cv2.cvtColor(frame_ir, cv2.COLOR_BGR2GRAY)
+    
+    # Вычисление оптического потока для RGB и IR каналов
+    magnitude_rgb = compute_motion(prev_gray_rgb, gray_rgb)
+    magnitude_ir = compute_motion(prev_gray_ir, gray_ir)
+    
+    # Суммируем величины изменения в обоих каналах
+    combined_magnitude = cv2.add(magnitude_rgb, magnitude_ir)
+    
+    # Устанавливаем порог для выделения движущихся объектов
+    motion_threshold = 2.0
+    mask = np.zeros_like(frame_rgb, dtype=np.uint8)
+    mask[combined_magnitude > motion_threshold] = 255
+    
+    # Применяем маску к исходному кадру
+    result_frame = cv2.bitwise_and(frame_rgb, frame_rgb, mask=mask[:, :, 0])  # Маска для одноцветного канала
+    
+    # Получаем координаты (например, X, Y центра движения)
+    non_zero_points = np.nonzero(mask[:, :, 0])  # Индексы ненулевых пикселей
+    if len(non_zero_points[0]) > 0:
+        # Если есть движущиеся пиксели, выводим их средние координаты
+        center_x = int(np.mean(non_zero_points[1]))  # Среднее по оси X
+        center_y = int(np.mean(non_zero_points[0]))  # Среднее по оси Y
+        print(f"Координаты движущегося объекта: X={center_x}, Y={center_y}")
+    
+    # Уменьшаем размер окна для отображения результата
+    result_frame_resized = cv2.resize(result_frame, (640, 360))  # Новый размер окна
+    
+    # Отображаем результат
+    cv2.imshow("Motion Detection", result_frame_resized)
+    
+    # Обновляем предыдущие кадры
+    prev_gray_rgb = gray_rgb.copy()
+    prev_gray_ir = gray_ir.copy()
+    
+    # Вывод прогресса в консоль
+    progress_rgb = (frame_count / total_frames_rgb) * 100
+    print(f"Обработано {frame_count}/{total_frames_rgb} кадров ({progress_rgb:.2f}%)", end="\r")
+    
+    # Выход из цикла по нажатию клавиши ESC
     if cv2.waitKey(1) & 0xFF == 27:
         break
 
-video.release()
+video_rgb.release()
+video_ir.release()
 cv2.destroyAllWindows()
