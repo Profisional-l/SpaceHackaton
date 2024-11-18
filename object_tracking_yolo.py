@@ -1,3 +1,5 @@
+import os.path
+
 import cv2
 import numpy as np
 
@@ -12,12 +14,12 @@ def compute_motion(prev_gray, gray):
     return magnitude
 
 # Захват видео
-video_rgb_path = '../Seq1_camera1.mov'  # Обычное видео
-video_ir_path = '../Seq1_camera1T.mov'   # Инфракрасное видео
+video_rgb_path = os.path.abspath('tests\\step1\\videoset1\\Seq1_camera1.mov')  # Обычное видео
+video_ir_path = os.path.abspath('tests\\step1\\videoset1\\Seq1_camera1T.mov')  # ИК видео
 
 # Открытие видеопотоков
-video_rgb = cv2.VideoCapture(video_rgb_path)
-video_ir = cv2.VideoCapture(video_ir_path)
+video_rgb = cv2.VideoCapture(video_rgb_path, cv2.CAP_FFMPEG)
+video_ir = cv2.VideoCapture(video_ir_path, cv2.CAP_FFMPEG)
 
 # Проверим, что видео было загружено
 if not video_rgb.isOpened() or not video_ir.isOpened():
@@ -82,7 +84,7 @@ while True:
     result_frame_resized = cv2.resize(result_frame, (640, 360))  # Новый размер окна
     
     # Отображаем результат
-    cv2.imshow("Motion Detection", result_frame_resized)
+    # cv2.imshow("Motion Detection", result_frame_resized)
     
     # Обновляем предыдущие кадры
     prev_gray_rgb = gray_rgb.copy()
