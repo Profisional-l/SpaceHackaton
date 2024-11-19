@@ -48,12 +48,6 @@ class VideoProcessor:
         predicted = self.kalman.predict()
         return predicted[0], predicted[1]
 
-    def get_frame_size(self):
-        """
-        Получение размера кадра
-        """
-        return self.frame_size
-
     def __get_coords_and_diameter(self, frame):
         """
         Приватная функция для получения координат объекта и диаметра на кадре
@@ -84,13 +78,17 @@ class VideoProcessor:
             # Применяем фильтр Калмана
             predicted_x, predicted_y = self._kalman_filter(int(x), int(y))
 
+            # Преобразуем координаты в систему координат относительно центра фрейма
+            relative_x = predicted_x[0] - self.center_x
+            relative_y = predicted_y[0] - self.center_y
+
             # Возвращаем координаты и диаметр (2 * радиус)
             self.prev_gray_frame = gray_frame.copy()
-            print(f"Координаты объекта: ({predicted_x[0]}, {predicted_y[0]})")
-            return (predicted_x[0], predicted_y[0]), 2 * radius
+            # print(f"Координаты объекта: ({relative_x}, {relative_y})")
+            return (relative_x, relative_y), 2 * radius
         else:
             if not self.object_hidden:
-                print("Объект скрыт из кадра")
+                # print("Объект скрыт из кадра")
                 self.object_hidden = True
             return None, None
 
@@ -118,9 +116,9 @@ class VideoProcessor:
                 self.object_hidden = True
 
             # Вывод прогресса в консоль
-            progress = (frame_count / self.total_frames) * 100
-            elapsed_time = frame_count / self.video.get(cv2.CAP_PROP_FPS)
-            print(f"Кадр: {frame_count}/{self.total_frames} ({progress:.2f}%) - Время: {elapsed_time:.2f}с", end="\r")
+            # progress = (frame_count / self.total_frames) * 100
+            # elapsed_time = frame_count / self.video.get(cv2.CAP_PROP_FPS)
+            # print(f"\nКадр: {frame_count}/{self.total_frames} ({progress:.2f}%) - Время: {elapsed_time:.2f}с", end="\r")
 
             # Выход по нажатию ESC
             # if cv2.waitKey(1) & 0xFF == 27:

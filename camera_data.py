@@ -8,3 +8,9 @@ class CameraData:
         self.z = z
         self.az = az
         self.sphere_diameter = sphere_diameter
+
+    def __str__(self):
+        return f"CameraData(focal_length={self.focal_length}, matrix_width={self.matrix_width}, matrix_height={self.matrix_height}, x={self.x}, y={self.y}, z={self.z}, az={self.az}, sphere_diameter={self.sphere_diameter})"
+
+    def __repr__(self):
+        return str(self)
