@@ -1,6 +1,5 @@
 import os
 from concurrent.futures import ThreadPoolExecutor
-from camera_data import CameraData
 from data_processing import get_coords_from_projection, merge_data_sets, combine_arrays, \
     interpolate_missing_values
 from excel import parse_camera_settings, write_results_to_excel

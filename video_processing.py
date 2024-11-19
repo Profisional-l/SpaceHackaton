@@ -72,6 +72,10 @@ class VideoProcessor:
         """
         Функция для обработки RGB кадра
         """
+        if self.prev_gray_frame is None:
+            self.prev_gray_frame = cv2.cvtColor(frame_rgb, cv2.COLOR_BGR2GRAY)
+            return None, self.prev_gray_frame
+
         gray_rgb = cv2.cvtColor(frame_rgb, cv2.COLOR_BGR2GRAY)
         diff_rgb = cv2.absdiff(self.prev_gray_frame, gray_rgb)
         return diff_rgb, gray_rgb
@@ -80,49 +84,15 @@ class VideoProcessor:
         """
         Функция для обработки IR кадра
         """
+        if self.prev_gray_frame is None:
+            self.prev_gray_frame = cv2.cvtColor(frame_ir, cv2.COLOR_BGR2GRAY)
+            processed_ir = self._preprocess_ir_frame(self.prev_gray_frame)
+            return None, processed_ir
+
         gray_ir = cv2.cvtColor(frame_ir, cv2.COLOR_BGR2GRAY)
         processed_ir = self._preprocess_ir_frame(gray_ir)
         diff_ir = cv2.absdiff(self.prev_gray_frame, processed_ir)
         return diff_ir, processed_ir
-
-    def __get_coords_and_diameter(self, frame) -> ((float, float), float):
-        """
-        Приватная функция для получения координат объекта и диаметра на кадре
-        """
-        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray_frame = cv2.medianBlur(gray_frame, 5)
-
-        if self.prev_gray_frame is None:
-            self.prev_gray_frame = gray_frame
-            return None, None
-
-        diff_frame = cv2.absdiff(self.prev_gray_frame, gray_frame)
-        _, mask = cv2.threshold(diff_frame, 30, 255, cv2.THRESH_BINARY)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
-
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        if contours:
-            contours = [c for c in contours if 100 < cv2.contourArea(c) < 10000]
-            if not contours:
-                return None, None
-
-            largest_contour = max(contours, key=cv2.contourArea)
-            center, diameter = self._find_ball_parameters(largest_contour)
-
-            if diameter < 20:
-                return None, None
-
-            predicted_x, predicted_y = self._kalman_filter(center[0], center[1])
-            relative_x = predicted_x[0] - self.center_x
-            relative_y = predicted_y[0] - self.center_y
-
-            self.prev_gray_frame = gray_frame.copy()
-            return (relative_x, relative_y), diameter
-        else:
-            if not self.object_hidden:
-                self.object_hidden = True
-            return None, None
 
     def get_all_coords(self) -> list[dict]:
         """
@@ -144,7 +114,7 @@ class VideoProcessor:
                 else:
                     diff, gray = self._process_ir_frame(frame)
 
-                diff_combined = diff
+                diff_combined = diff if diff is not None else np.zeros_like(gray)
                 _, mask = cv2.threshold(diff_combined, 30, 255, cv2.THRESH_BINARY)
                 mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
 
