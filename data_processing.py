@@ -20,9 +20,9 @@ def get_coords_from_projection(coords: tuple[int, int], frame_size: tuple[int, i
     x_sm = camera_data.sphere_diameter * coords[0] / sphere_diameter
     y_sm = camera_data.sphere_diameter * coords[1] / sphere_diameter
 
-    x = -z_sm * np.sin(np.radians(az)) - x_sm * np.cos(az) + camera_data.x
-    y = -y_sm + camera_data.y
-    z = -z_sm * np.cos(np.radians(az)) + x_sm * np.sin(az) + camera_data.z
+    x = z_sm * np.sin(np.radians(az)) + x_sm * np.cos(az) + camera_data.x
+    y = y_sm + camera_data.y
+    z = z_sm * np.cos(np.radians(az)) - x_sm * np.sin(az) + camera_data.z
 
     delta_z = lambda beta: 1e-3 * (camera_data.sphere_diameter * camera_data.focal_length / d / (1-beta) + camera_data.sphere_diameter * camera_data.focal_length / d / (1+beta))
     delta_x = lambda beta, g_1: coords[0] * camera_data.sphere_diameter / sphere_diameter * ((1+g_1) / (1-beta) - (1-g_1) / (1+beta))
@@ -30,61 +30,6 @@ def get_coords_from_projection(coords: tuple[int, int], frame_size: tuple[int, i
 
     delta = max([np.sqrt(delta_x(a/sphere_diameter, a_1/coords[0])**2 + delta_y(a/sphere_diameter, a_2/coords[1])**2 + delta_z(a/sphere_diameter)) for a in [0.5, 1, 1.5, 2] for a_1 in [0.5, 1, 1.5, 2] for a_2 in [0.5, 1, 1.5, 2]])
     return (x, y, z), delta
-
-
-def calculate_sphere_coordinates(
-    # camera_coords,        # Координаты камеры (x_c, y_c, z_c)
-    # azimuth_angle,        # Угол азимута камеры (phi_c в радианах)
-    # frame_resolution,     # Разрешение фрейма (w, h)
-    # sphere_projection,    # Координаты и диаметр шара в пикселях (x_s', y_s', d_s')
-    # sphere_diameter,      # Реальный диаметр шара (D_s в метрах)
-    # focal_length,         # Фокусное расстояние камеры (f в метрах)
-    # matrix_size           # Размеры матрицы камеры (W_m, H_m в метрах)
-    camera_data: CameraData,
-    frame_resolution: tuple[int, int],
-    sphere_projection: tuple[int, int, int]
-) -> (tuple[float, float, float], float):
-    """
-    Расчет координат объекта в пространстве по его проекции на кадре
-    :param camera_data: Данные о камере
-    :param frame_resolution: Разрешение фрейма (w, h)
-    :param sphere_projection: Координаты и диаметр шара в пикселях (x_s', y_s', d_s')
-    """
-
-    # Распаковка входных данных
-    x_c, y_c, z_c = camera_data.x, camera_data.y, camera_data.z
-    w, h = frame_resolution
-    x_s_prime, y_s_prime, d_s_prime = sphere_projection
-    D_s = camera_data.sphere_diameter
-    W_m, H_m = camera_data.matrix_width * 1e-3, camera_data.matrix_height * 1e-3
-    phi_c = np.radians(camera_data.az)
-    focal_length = camera_data.focal_length * 1e-3
-
-    # 1. Перевод координат из пикселей в метры
-    p_x = W_m / w
-    p_y = H_m / h
-    x_s_double_prime = x_s_prime * p_x
-    y_s_double_prime = y_s_prime * p_y
-
-    # 2. Расчет расстояния до шара
-    z_s = (focal_length * D_s) / d_s_prime
-
-    # 3. Определение координат шара в системе координат камеры
-    x_s = x_s_double_prime * z_s / focal_length
-    y_s = y_s_double_prime * z_s / focal_length
-
-    # 4. Переход в абсолютную систему координат
-    x_s_abs = x_c + x_s * np.cos(phi_c) - z_s * np.sin(phi_c)
-    y_s_abs = y_c + y_s
-    z_s_abs = z_c + x_s * np.sin(phi_c) + z_s * np.cos(phi_c)
-
-    # 5. Оценка погрешности
-    delta_x = p_x * z_s / focal_length
-    delta_y = p_y * z_s / focal_length
-    delta_max = np.sqrt(delta_x**2 + delta_y**2)
-
-    # Возврат результата
-    return ((x_s_abs, y_s_abs, z_s_abs), delta_max)
 
 def merge_data_sets(data_set1, data_set2):
     """
