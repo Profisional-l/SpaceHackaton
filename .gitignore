@@ -3,3 +3,4 @@
 tests
 path_to_image.png
 __pycache__
+output*.xlsx

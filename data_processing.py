@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.interpolate import interp1d
 
 from camera_data import CameraData
 
@@ -12,28 +13,24 @@ def get_coords_from_projection(coords: tuple[int, int], frame_size: tuple[int, i
     :param camera_data: Данные о камере
     :return: Координаты объекта в пространстве и предел погрешности
     """
-    # TODO: Реализовать функцию
-    f = camera_data.focal_length * 1e-3
-    w, h = camera_data.matrix_width * 1e-3, camera_data.matrix_height * 1e-3
+    az = np.radians(camera_data.az)
+    d = np.sqrt(camera_data.matrix_width * camera_data.matrix_height / (frame_size[0] * frame_size[1])) * 1e-3 * sphere_diameter
 
-    alpha = np.sqrt(w * h / frame_size[0] / frame_size[1])
-    d = alpha * sphere_diameter
+    z_sm = camera_data.sphere_diameter * camera_data.focal_length / d * 1e-3
+    x_sm = camera_data.sphere_diameter * coords[0] / sphere_diameter
+    y_sm = camera_data.sphere_diameter * coords[1] / sphere_diameter
 
-    z_c = (f * camera_data.sphere_diameter) / d
-    x_c = coords[0] * z_c / f * alpha
-    y_c = coords[1] * z_c / f * alpha
+    x = -z_sm * np.sin(np.radians(az)) - x_sm * np.cos(az) + camera_data.x
+    y = -y_sm + camera_data.y
+    z = -z_sm * np.cos(np.radians(az)) + x_sm * np.sin(az) + camera_data.z
 
-    x = x_c * np.cos(np.deg2rad(camera_data.az)) - z_c * np.sin(np.deg2rad(camera_data.az)) + camera_data.x
-    z = x_c * np.sin(np.deg2rad(camera_data.az)) + z_c * np.cos(np.deg2rad(camera_data.az)) + camera_data.z
-    y = y_c + camera_data.y
+    delta_z = lambda beta: 1e-3 * (camera_data.sphere_diameter * camera_data.focal_length / d / (1-beta) + camera_data.sphere_diameter * camera_data.focal_length / d / (1+beta))
+    delta_x = lambda beta, g_1: coords[0] * camera_data.sphere_diameter / sphere_diameter * ((1+g_1) / (1-beta) - (1-g_1) / (1+beta))
+    delta_y = lambda beta, g_2: coords[1] * camera_data.sphere_diameter / sphere_diameter * ((1+g_2) / (1-beta) - (1-g_2) / (1+beta))
 
-    dz_c = np.max([np.abs(f * camera_data.sphere_diameter / (d * (1-(a/2)/sphere_diameter)) - f * camera_data.sphere_diameter / (d * (1+(a/2)/sphere_diameter))) for a in range(1, 5)])
-    dx_c = coords[0] / f * dz_c * alpha
-    dy_c = coords[1] / f * dz_c * alpha
-
-    delta = np.sqrt(dx_c**2 + dy_c**2 + dz_c**2)
-
+    delta = max([np.sqrt(delta_x(a/sphere_diameter, a_1/coords[0])**2 + delta_y(a/sphere_diameter, a_2/coords[1])**2 + delta_z(a/sphere_diameter)) for a in [0.5, 1, 1.5, 2] for a_1 in [0.5, 1, 1.5, 2] for a_2 in [0.5, 1, 1.5, 2]])
     return (x, y, z), delta
+
 
 def calculate_sphere_coordinates(
     # camera_coords,        # Координаты камеры (x_c, y_c, z_c)
@@ -123,3 +120,48 @@ def merge_data_sets(data_set1, data_set2):
             merged_data.append(None)
 
     return merged_data
+
+def combine_arrays(arr1, arr2, arr3):
+    combined = []
+    for a, b, c in zip(arr1, arr2, arr3):
+        candidates = [a, b, c]
+        candidates = [x for x in candidates if x is not None]
+        if candidates:
+            best_candidate = min(candidates, key=lambda x: x[1])
+            combined.append(best_candidate)
+        else:
+            combined.append((None, None))
+    return combined
+
+def interpolate_missing_values(combined):
+    """
+    Интерполяция пропущенных значений в наборе данных.
+    Формат данных: список кортежей (координаты, погрешность)
+    :param combined: Набор данных
+    :return: Набор данных с интерполированными значениями
+    """
+    coords = np.array([x[0] if x[0] is not None else (np.nan, np.nan, np.nan) for x in combined])
+    errors = np.array([x[1] if x[1] is not None else np.nan for x in combined])
+
+    # Find the first and last valid indices
+    first_valid_index = next((i for i, x in enumerate(coords) if x is not None), None)
+    last_valid_index = next((i for i, x in enumerate(reversed(coords)) if x is not None), None)
+    if last_valid_index is not None:
+        last_valid_index = len(coords) - 1 - last_valid_index
+
+    if first_valid_index is None or last_valid_index is None:
+        return combined  # No valid data to interpolate
+
+    # Interpolate x, y, z coordinates separately using cubic interpolation
+    for i in range(3):
+        valid = ~np.isnan(coords[first_valid_index:last_valid_index + 1, i])
+        if np.sum(valid) > 1:  # Ensure there are enough points to interpolate
+            interp_func = interp1d(np.where(valid)[0], coords[first_valid_index:last_valid_index + 1][valid, i], kind='cubic', fill_value='extrapolate')
+            coords[first_valid_index:last_valid_index + 1, i] = interp_func(np.arange(last_valid_index - first_valid_index + 1))
+
+    # Replace None with interpolated values, excluding start and end None values
+    for i in range(first_valid_index, last_valid_index + 1):
+        if combined[i][0] is None:
+            combined[i] = (tuple(coords[i]), errors[i])
+
+    return combined

@@ -1,8 +1,9 @@
 import os
 from concurrent.futures import ThreadPoolExecutor
 from camera_data import CameraData
-from data_processing import get_coords_from_projection, merge_data_sets, calculate_sphere_coordinates
-from excel import parse_camera_settings
+from data_processing import get_coords_from_projection, merge_data_sets, calculate_sphere_coordinates, combine_arrays, \
+    interpolate_missing_values
+from excel import parse_camera_settings, write_results_to_excel
 from video_processing import VideoProcessor
 
 
@@ -21,7 +22,7 @@ def process_video(video_processor, camera_info):
 def main():
     videoset = int(input("Введите номер видеосета (1-8): "))
 
-    cs = parse_camera_settings(os.path.abspath(f'tests\\step1\\videoset{videoset}\\Seq{videoset}_settings.xlsx'))
+    cs = parse_camera_settings(os.path.abspath(f'tests\\step1\\videoset{videoset}\\Seq{videoset}_settings.xlsx'), videoset)
     camera_info = list(cs.values())
     print(camera_info)
     input('Нажмите Enter для продолжения...')
@@ -52,13 +53,24 @@ def main():
 
     print('Объединение данных...')
     results = [merge_data_sets(rgb, ir) for rgb, ir in zip(results_rgb, results_ir)]
+    results_ = []
     for i, result in enumerate(results):
         print(f"Камера {i + 1}:")
+        results_.append([])
         for j, data in enumerate(result):
             # не работает
-            data1 = get_coords_from_projection((data['x'], data['y']), video_processors[i].frame_size, data['diameter'], camera_info[i]) if data else None
-            data2 = calculate_sphere_coordinates(camera_info[i], video_processors[i].frame_size, (data['x'], data['y'], data['diameter'])) if data else None
-            print(f"Кадр {j}:\n\tПроекция: {data}\n\tКоординаты 1: {data1}\n\tКоординаты 2: {data2}")
+            data_ = get_coords_from_projection((data['x'], data['y']), video_processors[i].frame_size, data['diameter'], camera_info[i]) if data else None
+            # data2 = calculate_sphere_coordinates(camera_info[i], video_processors[i].frame_size, (data['x'], data['y'], data['diameter'])) if data else None
+            print(f"Кадр {j}:\n\tПроекция: {data}\n\tКоординаты 1: {data_}")
+            results_[i].append(data_)
+
+    result = combine_arrays(*results_)
+    # print(result)
+    result = interpolate_missing_values(result)
+
+    print(result)
+    write_results_to_excel(result, f'output{videoset}.xlsx')
+
 
 
 if __name__ == "__main__":
