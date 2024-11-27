@@ -1,3 +1,5 @@
+import os.path
+
 import cv2
 import numpy as np
 from camera_data import CameraData
@@ -13,6 +15,8 @@ class VideoProcessor:
         :param camera_data: Данные о камере
         :param video_type: Тип видео (rgb или ir)
         """
+        if not os.path.exists(video_path):
+            raise FileNotFoundError(f'No such file "{video_path}"')
         self.video_path = video_path
         self.camera_data = camera_data
         self.video_type = video_type

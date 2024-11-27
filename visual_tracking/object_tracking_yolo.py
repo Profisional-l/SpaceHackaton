@@ -2,6 +2,9 @@ import cv2
 import numpy as np
 import concurrent.futures
 
+if __name__ != '__main__':
+    raise ImportError("This module is not intended to be imported")
+
 # Известные параметры
 KNOWN_WIDTH = 3  # Известный диаметр объекта (в метрах)
 FOCAL_LENGTH = 800  # Фокусное расстояние камеры (в пикселях)

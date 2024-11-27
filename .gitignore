@@ -6,3 +6,4 @@ __pycache__
 output*.xlsx
 yolo*.pt
 yolov*.pt
+yolo

@@ -4,7 +4,7 @@ from scipy.interpolate import interp1d
 from camera_data import CameraData
 
 
-def get_coords_from_projection(coords: tuple[int, int], frame_size: tuple[int, int], sphere_diameter, camera_data: CameraData) -> (tuple[float, float, float], float):
+def get_coords_from_projection(coords: tuple[float, float], frame_size: tuple[int, int], sphere_diameter, camera_data: CameraData) -> (tuple[float, float, float], float):
     """
     Получение координат объекта по его проекции на кадре
     :param coords: Координаты объекта на кадре

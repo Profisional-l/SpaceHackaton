@@ -1,8 +1,15 @@
+# from warnings import simplefilter
+import os.path
+
 import pandas as pd
 from camera_data import CameraData
 
 
 def parse_camera_settings(file_path, videoset_num):
+
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f'No such file "{file_path}"')
+
     # Load the Excel file and sheet data
     excel_file = pd.ExcelFile(file_path)
     sheet_data = excel_file.parse(f'Seq{videoset_num}')
@@ -66,7 +73,7 @@ def parse_camera_settings(file_path, videoset_num):
             az=float(az),
             sphere_diameter=float(sphere_diameter)
         )
-
+    # simplefilter('default')
     return camera_data_objects
 
 def write_results_to_excel(results, output_file):
@@ -81,7 +88,6 @@ def write_results_to_excel(results, output_file):
     data_ = []
 
     for i, data in enumerate(results):
-        print(data)
         if data is not None:
             data_.append((i*0.5, data[0][0], data[0][1], data[0][2], data[1]))
         else:
