@@ -34,8 +34,8 @@ def kalman_filter(x, y, kalman):
 
 
 # Захват видео
-video_rgb_path = '../tests/step1/videoset1/Seq1_camera1.mov'
-video_ir_path = '../tests/step1/videoset1/Seq1_camera1T.mov'
+video_rgb_path = '../tests/step1/videoset8/Seq8_camera1.mov'
+video_ir_path = '../tests/step1/videoset8/Seq8_camera1T.mov'
 
 video_rgb = cv2.VideoCapture(video_rgb_path)
 video_ir = cv2.VideoCapture(video_ir_path)
@@ -157,8 +157,8 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
             print(f"Координаты объекта: X={predicted_x:.2f}, Y={predicted_y:.2f}, Диаметр={diameter:.2f}")
 
             # Отображаем область интереса
-            cv2.circle(frame_rgb, center, int(diameter // 2), (0, 255, 0), 2)
-            cv2.putText(frame_rgb, f"Dist: {distance:.2f}m", (center[0], center[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+            cv2.circle(frame_ir, center, int(diameter // 2), (0, 255, 0), 2)
+            cv2.putText(frame_ir, f"Dist: {distance:.2f}m", (center[0], center[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
                         (255, 0, 0), 2)
 
             object_hidden = False  # Объект найден, сбрасываем флаг
@@ -167,13 +167,13 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
             if not object_hidden and predicted_x is not None and predicted_y is not None:
                 print("Объект скрыт, продолжаем следить за последним местоположением")
                 # Применяем последнюю позицию, чтобы предсказать следующую координату
-                cv2.putText(frame_rgb, "Object Hidden", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                cv2.putText(frame_ir, "Object Hidden", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
                 # Показать старые предсказания
-                cv2.circle(frame_rgb, (int(predicted_x), int(predicted_y)), 5, (0, 0, 255), -1)
+                cv2.circle(frame_ir, (int(predicted_x), int(predicted_y)), 5, (0, 0, 255), -1)
                 object_hidden = True  # Устанавливаем флаг скрытого объекта
 
         # Отображаем финальный результат
-        cv2.imshow("Motion Detection", frame_rgb)
+        cv2.imshow("Motion Detection", frame_ir)
         prev_gray_rgb = gray_rgb.copy()
         prev_gray_ir = processed_ir.copy()
 

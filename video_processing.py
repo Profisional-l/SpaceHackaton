@@ -8,7 +8,32 @@ import concurrent.futures
 class VideoProcessor:
     """
     Класс для обработки видео
+    TODO: Переработать метод обработки кадров
     """
+    # def __init__(self, video_path: str, video_t_path: str, camera_data: CameraData):
+        # """
+        # :param video_path: Путь к видеофайлу
+        # :param video_t_path: Путь к видеофайлу тепловизора
+        # :param camera_data: Данные о камере
+        # """
+        # if not os.path.exists(video_path):
+        #     raise FileNotFoundError(f'No such file "{video_path}"')
+        # if not os.path.exists(video_t_path):
+        #     raise FileNotFoundError(f'No such file "{video_t_path}"')
+        # self.video_path = video_path
+        # self.video_t_path = video_t_path
+        # self.camera_data = camera_data
+        # self.video = cv2.VideoCapture(video_path, cv2.CAP_FFMPEG)
+        # self.video_t = cv2.VideoCapture(video_t_path, cv2.CAP_FFMPEG)
+        # self.frame_size = (
+        #     int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH)),
+        #     int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # )
+        # self.total_frames = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
+        # self.total_frames_t = int(self.video_t.get(cv2.CAP_PROP_FRAME_COUNT))
+        # self.center_x = self.frame_size[0] // 2
+        # self.center_y = self.frame_size[1] // 2
+
     def __init__(self, video_path: str, camera_data: CameraData, video_type: str = 'rgb'):
         """
         :param video_path: Путь к видеофайлу

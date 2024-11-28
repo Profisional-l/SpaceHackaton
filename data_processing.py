@@ -13,6 +13,7 @@ def get_coords_from_projection(coords: tuple[float, float], frame_size: tuple[in
     :param camera_data: Данные о камере
     :return: Координаты объекта в пространстве и предел погрешности
     """
+    # TODO: Сделать рабочий алгоритм
     az = np.radians(camera_data.az)
     d = np.sqrt(camera_data.matrix_width * camera_data.matrix_height / (frame_size[0] * frame_size[1])) * 1e-3 * sphere_diameter
 
@@ -38,6 +39,8 @@ def merge_data_sets(data_set1, data_set2):
     :param data_set2: Второй набор данных (список координат и диаметров)
     :return: Объединенный набор данных
     """
+    # Плохой подход
+
     # Длина объединенного набора данных будет равна длине самого длинного из двух
     max_length = max(len(data_set1), len(data_set2))
     merged_data = []
