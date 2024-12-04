@@ -14,23 +14,29 @@ def get_coords_from_projection(coords: tuple[float, float], frame_size: tuple[in
     :return: Координаты объекта в пространстве и предел погрешности
     """
     # TODO: Сделать рабочий алгоритм
-    az = np.radians(camera_data.az)
-    d = np.sqrt(camera_data.matrix_width * camera_data.matrix_height / (frame_size[0] * frame_size[1])) * 1e-3 * sphere_diameter
+    az = -np.deg2rad(camera_data.az)
+    # d = np.sqrt(camera_data.matrix_width * camera_data.matrix_height / (frame_size[0] * frame_size[1])) * 1e-3 * sphere_diameter
+    #
+    # z_sm = camera_data.sphere_diameter * camera_data.focal_length / d * 1e-3
+    # x_sm = camera_data.sphere_diameter * coords[0] / sphere_diameter
+    # y_sm = camera_data.sphere_diameter * coords[1] / sphere_diameter
 
-    z_sm = camera_data.sphere_diameter * camera_data.focal_length / d * 1e-3
-    x_sm = camera_data.sphere_diameter * coords[0] / sphere_diameter
-    y_sm = camera_data.sphere_diameter * coords[1] / sphere_diameter
+    h_pi = camera_data.sphere_diameter * frame_size[1] / sphere_diameter
 
-    x = z_sm * np.sin(np.radians(az)) + x_sm * np.cos(az) + camera_data.x
-    y = y_sm + camera_data.y
-    z = z_sm * np.cos(np.radians(az)) - x_sm * np.sin(az) + camera_data.z
+    z_c = h_pi * camera_data.focal_length * 1e-3 / camera_data.matrix_width
+    x_c = coords[0] * camera_data.sphere_diameter / sphere_diameter
+    y_c = coords[1] * camera_data.sphere_diameter / sphere_diameter
 
-    delta_z = lambda beta: 1e-3 * (camera_data.sphere_diameter * camera_data.focal_length / d / (1-beta) + camera_data.sphere_diameter * camera_data.focal_length / d / (1+beta))
-    delta_x = lambda beta, g_1: coords[0] * camera_data.sphere_diameter / sphere_diameter * ((1+g_1) / (1-beta) - (1-g_1) / (1+beta))
-    delta_y = lambda beta, g_2: coords[1] * camera_data.sphere_diameter / sphere_diameter * ((1+g_2) / (1-beta) - (1-g_2) / (1+beta))
-
-    delta = max([np.sqrt(delta_x(a/sphere_diameter, a_1/coords[0])**2 + delta_y(a/sphere_diameter, a_2/coords[1])**2 + delta_z(a/sphere_diameter)) for a in [0.5, 1, 1.5, 2] for a_1 in [0.5, 1, 1.5, 2] for a_2 in [0.5, 1, 1.5, 2]])
-    return (x, y, z), delta
+    x = z_c * np.sin(az) + x_c * np.cos(az) + camera_data.x
+    y = y_c + camera_data.y
+    z = z_c * np.cos(az) - x_c * np.sin(az) + camera_data.z
+    #
+    # delta_z = lambda beta: 1e-3 * (camera_data.sphere_diameter * camera_data.focal_length / d / (1-beta) + camera_data.sphere_diameter * camera_data.focal_length / d / (1+beta))
+    # delta_x = lambda beta, g_1: coords[0] * camera_data.sphere_diameter / sphere_diameter * ((1+g_1) / (1-beta) - (1-g_1) / (1+beta))
+    # delta_y = lambda beta, g_2: coords[1] * camera_data.sphere_diameter / sphere_diameter * ((1+g_2) / (1-beta) - (1-g_2) / (1+beta))
+    #
+    # delta = max([np.sqrt(delta_x(a/sphere_diameter, a_1/coords[0])**2 + delta_y(a/sphere_diameter, a_2/coords[1])**2 + delta_z(a/sphere_diameter)) for a in [0.5, 1, 1.5, 2] for a_1 in [0.5, 1, 1.5, 2] for a_2 in [0.5, 1, 1.5, 2]])
+    return (x, y, z), 0
 
 def merge_data_sets(data_set1, data_set2):
     """
